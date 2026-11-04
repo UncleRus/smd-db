@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ error_title }} · {{ t('app.title') }}{% endblock %}
+{% block content %}
+<article class="elum-card elum-card-labeled elum-stack error-page">
+  <header class="elum-card-header">
+    <h1 class="elum-card-title">{{ error_title }}</h1>
+  </header>
+  <p class="error-status">
+    <span class="elum-badge" data-tone="warn">{{ status_code }}</span>
+  </p>
+  <p class="elum-card-subtitle">{{ error_message }}</p>
+  <p class="error-actions">
+    <a class="elum-button" data-variant="primary" href="{{ url_for('main.search', lang=lang, theme=theme) }}">{{ t('error.back') }}</a>
+  </p>
+</article>
+{% endblock %}

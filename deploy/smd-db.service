@@ -1,0 +1,29 @@
+[Unit]
+Description=SMD-DB web application (CherryPy / cheroot)
+Documentation=file:/opt/smd-db/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=smd-db
+Group=smd-db
+WorkingDirectory=/opt/smd-db
+ExecStart=/opt/smd-db/.venv/bin/python /opt/smd-db/run.py
+Restart=on-failure
+RestartSec=3
+
+# --- hardening ---
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/smd-db
+
+# --- logging ---
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=smd-db
+
+[Install]
+WantedBy=multi-user.target

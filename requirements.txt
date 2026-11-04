@@ -1,0 +1,2 @@
+CherryPy>=18.10
+Jinja2>=3.1

@@ -1,0 +1,25 @@
+{% if pages > 1 %}
+<nav class="elum-pagination" aria-label="{{ t('pagination.aria') }}">
+  {% if page > 1 %}
+  <a class="elum-button" data-variant="tertiary" href="{{ merge_args(page=page-1) }}" aria-label="{{ t('pagination.prev_aria') }}">‹ {{ t('pagination.prev') }}</a>
+  {% else %}
+  <button class="elum-button" data-variant="tertiary" type="button" aria-label="{{ t('pagination.prev_aria') }}" disabled>‹ {{ t('pagination.prev') }}</button>
+  {% endif %}
+
+  {% for item in page_items %}
+    {% if item is none %}
+    <span class="elum-pagination-status">…</span>
+    {% elif item == page %}
+    <a class="elum-button" data-variant="primary" href="{{ merge_args(page=item) }}" aria-current="page">{{ item }}</a>
+    {% else %}
+    <a class="elum-button" data-variant="tertiary" href="{{ merge_args(page=item) }}">{{ item }}</a>
+    {% endif %}
+  {% endfor %}
+
+  {% if page < pages %}
+  <a class="elum-button" data-variant="tertiary" href="{{ merge_args(page=page+1) }}" aria-label="{{ t('pagination.next_aria') }}">{{ t('pagination.next') }} ›</a>
+  {% else %}
+  <button class="elum-button" data-variant="tertiary" type="button" aria-label="{{ t('pagination.next_aria') }}" disabled>{{ t('pagination.next') }} ›</button>
+  {% endif %}
+</nav>
+{% endif %}

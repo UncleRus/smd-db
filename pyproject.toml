@@ -1,0 +1,24 @@
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_configs = true
+files = ["app", "run.py", "tests"]
+
+# CherryPy ships no type information (no py.typed, no stubs);
+# treat it as an untyped dependency instead of failing the run.
+[[tool.mypy.overrides]]
+module = ["cherrypy"]
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

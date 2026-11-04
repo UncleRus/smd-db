@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.about') }} · {{ t('app.title') }}{% endblock %}
+{% block content %}
+<article class="elum-card elum-card-labeled elum-stack">
+  <header class="elum-card-header">
+    <h1 class="elum-card-title">{{ t('about.title') }}</h1>
+  </header>
+  <p class="elum-card-subtitle">{{ t('about.subtitle') }}</p>
+  <p>{{ t('about.intro1') }}</p>
+  <p>{{ t('about.intro2') }}</p>
+</article>
+
+<h2 class="elum-separator-labeled">{{ t('about.catalogue') }}</h2>
+<div class="elum-metrics" data-layout="tiles" role="group" aria-label="{{ t('about.catalogue') }}">
+  <div class="elum-metric">
+    <span class="elum-metric-label">{{ t('about.metric.parts') }}</span>
+    <span class="elum-metric-value">{{ stats.parts|num }}</span>
+  </div>
+  <div class="elum-metric">
+    <span class="elum-metric-label">{{ t('about.metric.markings') }}</span>
+    <span class="elum-metric-value">{{ stats.markings|num }}</span>
+  </div>
+  <div class="elum-metric">
+    <span class="elum-metric-label">{{ t('about.metric.manufacturers') }}</span>
+    <span class="elum-metric-value">{{ stats.manufacturers|num }}</span>
+  </div>
+  <div class="elum-metric">
+    <span class="elum-metric-label">{{ t('about.metric.packages') }}</span>
+    <span class="elum-metric-value">{{ stats.packages|num }}</span>
+  </div>
+  <div class="elum-metric">
+    <span class="elum-metric-label">{{ t('about.metric.functions') }}</span>
+    <span class="elum-metric-value">{{ stats.functions|num }}</span>
+  </div>
+</div>
+
+<h2 class="elum-separator-labeled">{{ t('about.fields') }}</h2>
+<dl class="elum-detail-list">
+  <div class="elum-detail">
+    <dt class="elum-detail-term">{{ t('field.marking') }}</dt>
+    <dd class="elum-detail-value">{{ t('about.field.marking') }}</dd>
+  </div>
+  <div class="elum-detail">
+    <dt class="elum-detail-term">{{ t('field.name') }}</dt>
+    <dd class="elum-detail-value">{{ t('about.field.name') }}</dd>
+  </div>
+  <div class="elum-detail">
+    <dt class="elum-detail-term">{{ t('field.package') }}</dt>
+    <dd class="elum-detail-value">{{ t('about.field.package') }}</dd>
+  </div>
+  <div class="elum-detail">
+    <dt class="elum-detail-term">{{ t('field.manufacturer') }}</dt>
+    <dd class="elum-detail-value">{{ t('about.field.manufacturer') }}</dd>
+  </div>
+  <div class="elum-detail">
+    <dt class="elum-detail-term">{{ t('field.function') }}</dt>
+    <dd class="elum-detail-value">{{ t('about.field.function') }}</dd>
+  </div>
+  <div class="elum-detail">
+    <dt class="elum-detail-term">{{ t('field.description') }}</dt>
+    <dd class="elum-detail-value">{{ t('about.field.description') }}</dd>
+  </div>
+</dl>
+
+<h2 class="elum-separator-labeled">{{ t('about.app') }}</h2>
+<ul class="elum-feed">
+  <li class="elum-feed-item">
+    <span class="elum-badge" data-tone="accent">[INFO]</span>
+    <span>{{ t('about.app.data') }}</span>
+    <span class="elum-feed-meta">{{ t('about.tag.data') }}</span>
+  </li>
+  <li class="elum-feed-item">
+    <span class="elum-badge" data-tone="accent">[INFO]</span>
+    <span>{{ t('about.app.i18n') }}</span>
+    <span class="elum-feed-meta">{{ t('about.tag.i18n') }}</span>
+  </li>
+  <li class="elum-feed-item" data-tone="warn">
+    <span class="elum-badge" data-tone="warn">[NOTE]</span>
+    <span>{{ t('about.app.note') }}</span>
+    <span class="elum-feed-meta">{{ t('about.tag.data') }}</span>
+  </li>
+</ul>
+
+<hr class="elum-separator" />
+{% endblock %}

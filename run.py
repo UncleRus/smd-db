@@ -1,11 +1,4 @@
-"""Development entry point for the SMD-DB web application.
-
-Run with::
-
-    build/.venv/bin/python build/run.py
-
-then open http://127.0.0.1:5000/ .
-"""
+"""Development entry point for the SMD-DB web application."""
 
 from __future__ import annotations
 

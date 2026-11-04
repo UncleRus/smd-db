@@ -2,10 +2,6 @@
 
 The application is a plain WSGI callable, so the suite drives it directly with
 a small client built on ``wsgiref`` -- no live server and no Flask/Werkzeug.
-
-Run with::
-
-    build/.venv/bin/python -m pytest
 """
 
 from __future__ import annotations

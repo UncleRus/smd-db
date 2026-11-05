@@ -130,7 +130,11 @@ class Root:
             raise cherrypy.HTTPError(404)
         related = db.parts_with_marking(row["code"], row["id"], row["package_id"])
         context = page_context("search", "main.part", {"part_id": identifier})
-        context.update(part=row, related=related)
+        context.update(
+            part=row,
+            related=related,
+            package_has_image=db.has_package_image(row["package_id"]),
+        )
         return render("part.html", context)
 
     @expose

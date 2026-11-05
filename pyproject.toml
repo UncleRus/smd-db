@@ -2,7 +2,7 @@
 python_version = "3.11"
 strict = true
 warn_unused_configs = true
-files = ["app", "run.py", "tests"]
+files = ["app", "migrations", "run.py", "tests"]
 
 # CherryPy ships no type information (no py.typed, no stubs);
 # treat it as an untyped dependency instead of failing the run.

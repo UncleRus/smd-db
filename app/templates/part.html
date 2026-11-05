@@ -19,7 +19,11 @@
 
   <div class="elum-part-detail">
     <figure class="elum-package-figure">
+      {% if package_has_image %}
       <img src="{{ url_for('main.package_image', code=part['package_id']) }}" alt="{{ part['package_id'] }}" width="200" height="200" />
+      {% else %}
+      {% include "_package_placeholder.html" %}
+      {% endif %}
       <figcaption>{{ t('part.package_pins', package=part['package_id'], pins=part['pins']) }}</figcaption>
     </figure>
     <dl class="elum-detail-list">

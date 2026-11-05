@@ -6,8 +6,10 @@ a small client built on ``wsgiref`` -- no live server and no Flask/Werkzeug.
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Callable, Iterable
 from http.cookies import SimpleCookie
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
 from wsgiref.util import setup_testing_defaults
@@ -15,6 +17,11 @@ from wsgiref.util import setup_testing_defaults
 import pytest
 
 from app import create_app, db, i18n
+
+#: Reference copy of the "no image" placeholder used by the data migration.
+PLACEHOLDER_PNG: Path = (
+    Path(__file__).resolve().parent.parent / "migrations" / "empty.png"
+)
 
 StartResponse = Callable[[str, list[tuple[str, str]], Any], None]
 WSGIApp = Callable[[dict[str, Any], StartResponse], Iterable[bytes]]
@@ -141,22 +148,22 @@ def test_result_rows_are_links(client: Client) -> None:
 def test_marking_substring_is_case_insensitive(client: Client) -> None:
     upper = client.get("/?code=L3").text
     lower = client.get("/?code=l3").text
-    marker = 'class="elum-toolbar-value">753<'
+    marker = 'class="elum-toolbar-value">840<'
     assert marker in upper
     assert marker in lower
 
 
 def test_marking_matches_a_substring(client: Client) -> None:
-    # "L3" is a substring of 753 full codes; full-code matching would
-    # return only 60 rows.
+    # "L3" is a substring of 840 codes; full-code matching would
+    # return only 62 rows.
     text = client.get("/?code=L3").text
-    assert 'class="elum-toolbar-value">753<' in text
-    assert 'class="elum-toolbar-value">60<' not in text
+    assert 'class="elum-toolbar-value">840<' in text
+    assert 'class="elum-toolbar-value">62<' not in text
 
 
 @pytest.mark.parametrize(
     ("code", "expected"),
-    [("%", 6), ("*", 10), ("+", 110), ("/", 17), ("?", 10), ("_", 96)],
+    [("%", 14), ("*", 2433), ("+", 140), ("/", 18), ("?", 10), ("_", 98)],
 )
 def test_marking_special_characters_are_literal(
     client: Client, code: str, expected: int
@@ -164,13 +171,13 @@ def test_marking_special_characters_are_literal(
     # Marking codes may contain LIKE/GLOB metacharacters. They must be matched
     # literally, never as wildcards. Counts come from the shipped catalogue.
     text = client.get("/", query_string={"code": code}).text
-    assert f'class="elum-toolbar-value">{expected}<' in text
+    assert f'class="elum-toolbar-value">{expected:,}<' in text
 
 
 def test_wildcard_does_not_match_everything(client: Client) -> None:
     # A raw LIKE pattern would have matched the whole catalogue.
     text = client.get("/", query_string={"code": "%"}).text
-    assert 'class="elum-toolbar-value">423,489<' not in text
+    assert 'class="elum-toolbar-value">440,234<' not in text
 
 
 def test_unknown_marking_shows_empty_state(client: Client) -> None:
@@ -220,6 +227,52 @@ def test_missing_package_image_returns_404(client: Client) -> None:
 
 def test_package_without_image_segment_returns_404(client: Client) -> None:
     assert client.get("/package/SOT-223").status_code == 404
+
+
+def test_package_without_drawing_returns_404(client: Client) -> None:
+    # SC-89-3 has image = NULL after the placeholder migration.
+    assert client.get("/package/SC-89-3/image").status_code == 404
+
+
+def test_part_without_package_drawing_shows_placeholder(client: Client) -> None:
+    # Part 186 sits in SC-89-3, which has no stored drawing: the page must
+    # render the built-in placeholder instead of a broken <img>.
+    text = client.get("/part/186").text
+    assert "elum-package-placeholder" in text
+    assert "/package/SC-89-3/image" not in text
+
+
+def test_part_with_package_drawing_uses_image(client: Client) -> None:
+    # Part 1 sits in SC-70, which has a real drawing.
+    text = client.get("/part/1").text
+    assert "/package/SC-70/image" in text
+    assert "elum-package-placeholder" not in text
+
+
+def test_has_package_image_flag() -> None:
+    create_app()  # configures the data layer
+    assert db.has_package_image("SOT-223") is True
+    assert db.has_package_image("SC-89-3") is False
+    assert db.has_package_image("NO-SUCH-PACKAGE") is False
+
+
+def test_placeholder_images_are_null_and_none_remain() -> None:
+    # The shared "no image" placeholder was replaced with NULL by
+    # migrations/0001_null_placeholder_images.py.
+    create_app()  # configures the data layer
+    connection = db.get_db()
+    nulls = connection.execute(
+        "SELECT COUNT(*) FROM packages WHERE image IS NULL"
+    ).fetchone()[0]
+    assert nulls == 280
+    # No byte-identical copy of the reference placeholder may remain.
+    digest = hashlib.sha1(PLACEHOLDER_PNG.read_bytes()).hexdigest()
+    leftover = [
+        row[0]
+        for row in connection.execute("SELECT code, image FROM packages")
+        if row[1] is not None and hashlib.sha1(bytes(row[1])).hexdigest() == digest
+    ]
+    assert leftover == []
 
 
 def test_same_marking_rest_sorted_by_pins_then_package_then_name() -> None:
@@ -294,7 +347,7 @@ def test_theme_is_remembered_in_session(client: Client) -> None:
 def test_about_renders(client: Client) -> None:
     response = client.get("/about")
     assert response.status_code == 200
-    assert "423,489" in response.text
+    assert "440,234" in response.text
 
 
 # --- Error pages (overriding CherryPy defaults) ------------------------------

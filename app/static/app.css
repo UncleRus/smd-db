@@ -191,6 +191,20 @@
   color: var(--elum-color-muted);
   font-size: var(--elum-text-sm);
 }
+/* Placeholder shown when a package has no drawing: currentColor makes the
+   question mark follow the active theme, so it stays readable on any palette. */
+.elum-package-placeholder {
+  display: block;
+  color: var(--elum-color-fg);
+}
+.elum-package-placeholder svg {
+  display: block;
+  width: 200px;
+  height: 200px;
+}
+.elum-package-placeholder svg text {
+  font-family: var(--elum-font-family);
+}
 @media (max-width: 40rem) {
   .elum-part-detail {
     grid-template-columns: 1fr;

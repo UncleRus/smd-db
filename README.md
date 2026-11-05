@@ -36,7 +36,7 @@ python3 -m venv .venv                     # если .venv ещё нет
 ```bash
 cd build
 ./.venv/bin/python -m pip install -r requirements-dev.txt   # pytest, mypy, ruff, black
-./.venv/bin/python -m pytest        # 34 теста
+./.venv/bin/python -m pytest        # 41 тест
 ./.venv/bin/python -m mypy          # mypy --strict, конфигурация в pyproject.toml
 ./.venv/bin/python -m ruff check app run.py tests
 ./.venv/bin/python -m black --check app run.py tests
@@ -65,7 +65,14 @@ build/
 │       ├── part.html        карточка детали + совпадения по маркировке
 │       ├── about.html       описание базы и полей
 │       ├── error.html       страница ошибки в стиле приложения
-│       └── _pagination.html постраничная навигация
+│       ├── _pagination.html постраничная навигация
+│       └── _package_placeholder.html  заглушка «нет чертежа» (inline SVG)
+├── deploy/
+│   ├── smd-db.service       unit для systemd
+│   └── nginx-smd-db.conf    сайт nginx (reverse proxy)
+├── migrations/
+│   ├── empty.png            эталонная картинка-заглушка «нет чертежа»
+│   └── 0001_null_placeholder_images.py  замена её копий в БД на NULL
 ├── tests/test_app.py        набор тестов (pytest + WSGI-клиент)
 ├── run.py                   dev-точка входа (cheroot)
 ├── pyproject.toml           настройки mypy / ruff / black / pytest
@@ -81,7 +88,7 @@ build/
 |-------|-------------------------------|----------------------------------------------|
 | GET   | `/`                           | Поиск и результаты                           |
 | GET   | `/part/<int:part_id>`         | Страница одной детали                        |
-| GET   | `/package/<path:code>/image`  | PNG-чертёж корпуса (BLOB из БД)              |
+| GET   | `/package/<path:code>/image`  | PNG-чертёж корпуса (BLOB из БД); 404, если чертежа нет |
 | GET   | `/about`                      | Страница «О базе»                            |
 | GET   | `/static/...`                 | Статика (elumkit, `app.css`, `app.js`)       |
 
@@ -122,11 +129,18 @@ navbar, тема, язык, футер и оформление elumkit, что �
 ## Замечания по данным
 
 - Поиск по маркировке — по **подстроке** кода и без учёта регистра: `L3`
-  находит 753 записи (полное совпадение дало бы 60).
+  находит 840 записей (полное совпадение дало бы 62).
 - Спецсимволы в кодах (`?`, `+`, `/`, `\`, `_`, `%`, `*`) трактуются
-  буквально, а не как маски `LIKE`/`GLOB`: `%` — это подстрока в 6 записях,
+  буквально, а не как маски `LIKE`/`GLOB`: `%` — это подстрока в 14 записях,
   а не «все строки».
-- FTS не используется: фильтры по `LIKE` и точному совпадению по 423 489 строкам
+- Чертежи корпусов лежат в `packages.image`. Часть корпусов содержала одну и ту
+  же картинку-заглушку («нет чертежа»); миграция
+  `migrations/0001_null_placeholder_images.py` заменила все её копии на
+  `NULL`. При `NULL` страница детали (и прямой запрос `/package/<code>/image`)
+  не показывает битую картинку: интерфейс рисует собственную заглушку —
+  inline SVG, где знак `?` берётся из `currentColor`, поэтому он читается в
+  любой теме.
+- FTS не используется: фильтры по `LIKE` и точному совпадению по 440 234 строкам
   укладываются в десятки миллисекунд, а схема БД при этом не меняется.
 - Соединения с базой кэшируются на поток и переиспользуются; база всегда
   открывается в режиме `mode=ro` с `PRAGMA query_only = ON`.

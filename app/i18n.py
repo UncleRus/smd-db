@@ -69,6 +69,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "part.actions": "Part actions",
         "part.same_marking": "Same marking code",
         "part.package_pins": "{package} \u00b7 {pins} pins",
+        "part.no_image": "No package drawing available",
         # Footer
         "footer.brand": "SMD-DB \u00b7 offline component database",
         "footer.status": "parts {parts} \u00b7 manufacturers {manufacturers} \u00b7 packages {packages} \u00b7 functions {functions}",
@@ -155,6 +156,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "part.actions": "Действия с деталью",
         "part.same_marking": "С тем же кодом маркировки",
         "part.package_pins": "{package} \u00b7 выводов: {pins}",
+        "part.no_image": "Чертёж корпуса отсутствует",
         "footer.brand": "SMD-DB \u00b7 оффлайн-база компонентов",
         "footer.status": "деталей {parts} \u00b7 производителей {manufacturers} \u00b7 корпусов {packages} \u00b7 функций {functions}",
         "about.title": "SMD-DB \u2014 оффлайн-база SMD-компонентов",
@@ -238,6 +240,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "part.actions": "元件操作",
         "part.same_marking": "相同丝印代码",
         "part.package_pins": "{package} \u00b7 {pins} 引脚",
+        "part.no_image": "暂无封装图",
         "footer.brand": "SMD-DB \u00b7 离线元件数据库",
         "footer.status": "元件 {parts} \u00b7 制造商 {manufacturers} \u00b7 封装 {packages} \u00b7 功能 {functions}",
         "about.title": "SMD-DB \u2014 离线 SMD 元件数据库",

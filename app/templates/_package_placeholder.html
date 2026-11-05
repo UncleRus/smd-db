@@ -1,0 +1,9 @@
+{#- Theme-aware placeholder for packages that have no drawing in the database.
+    Inlined (rather than an <img>) so it inherits the theme's text colour:
+    `currentColor` keeps the question mark readable on every palette. -#}
+<span class="elum-package-placeholder" role="img" aria-label="{{ t('part.no_image') }}">
+  <svg viewBox="0 0 200 200" width="200" height="200" aria-hidden="true" focusable="false">
+    <rect x="8" y="8" width="184" height="184" rx="18" fill="currentColor" opacity="0.08" />
+    <text x="100" y="104" text-anchor="middle" dominant-baseline="central" font-size="120" font-weight="700" fill="currentColor">?</text>
+  </svg>
+</span>

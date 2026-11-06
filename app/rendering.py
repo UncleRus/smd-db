@@ -1,30 +1,118 @@
-"""Jinja2 rendering, URL building and template context for the SMD-DB app.
+"""Jinja2 integration and template context for the SMD-DB Flask application.
 
-The templates were written for Flask and use ``url_for``, ``merge_args``,
-``part_url`` and ``search_url``. This module re-implements those helpers on top
-of CherryPy so the markup can stay untouched.
+Rendering uses Flask's Jinja environment, configured by
+:func:`configure_environment`: the ``num`` filter, a ``finalize`` hook that
+renders ``None`` as an empty string, and ``t`` (translation) are installed once
+per application.
+
+The controller builds the page URLs and hands them over in the context; the
+only request-aware helper here is ``t``, which reads the current request itself.
 """
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any
-from urllib.parse import parse_qsl, quote, urlencode
+import sqlite3
+from collections.abc import Container
+from typing import Any, cast
 
-import cherrypy
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from flask import Flask, current_app, g, request, session
 
-from . import db, i18n
+from . import config, database, db, i18n
 
-#: Directory that holds the Jinja2 templates.
-TEMPLATES_DIR: Path = Path(__file__).resolve().parent / "templates"
+# --- Request state: query parameters, language and theme ---------------------
 
-_ENV: Environment = Environment(
-    loader=FileSystemLoader(str(TEMPLATES_DIR)),
-    autoescape=select_autoescape(("html", "xml")),
-    trim_blocks=True,
-    lstrip_blocks=True,
-)
+
+def query_args() -> dict[str, str]:
+    """Return the query-string parameters parsed for this request."""
+    return dict(request.args)
+
+
+def _pick(value: str | None, allowed: Container[str], default: str) -> str:
+    """Return ``value`` when it is one of ``allowed``, otherwise ``default``."""
+    if value is not None and value in allowed:
+        return value
+    return default
+
+
+def _resolve(key: str, allowed: Container[str], default: str) -> str:
+    """Resolve a per-request choice and cache it on the request.
+
+    The query parameter wins over the session value, which wins over the
+    default. The result is cached on :data:`flask.g` so the template context
+    and the error page agree on a single value per request. The session is only
+    written when the parameter was passed explicitly, so requests that merely
+    read a remembered choice (or hit a static file) never set a cookie.
+    """
+    cached = getattr(g, key, None)
+    if cached is not None:
+        return cast(str, cached)
+    raw = request.args.get(key)
+    explicit = raw is not None
+    if raw is None:
+        raw = session.get(key)
+    value = _pick(raw, allowed, default)
+    setattr(g, key, value)
+    if explicit:
+        session[key] = value
+        # Persist the choice beyond the browser session: the cookie then carries
+        # an expiry of ``PERMANENT_SESSION_LIFETIME`` (see create_app).
+        session.permanent = True
+    return value
+
+
+def request_lang() -> str:
+    """Active language: query parameter, then session, then the default."""
+    return _resolve("lang", i18n.TRANSLATIONS, i18n.DEFAULT_LANG)
+
+
+def request_theme() -> str:
+    """Active theme: query parameter, then session, then the default."""
+    return _resolve("theme", i18n.THEMES, i18n.DEFAULT_THEME)
+
+
+def _catalogue_stats() -> dict[str, int]:
+    """Return the catalogue counters, or zeroes when the database is unavailable."""
+    try:
+        return db.stats()
+    except (sqlite3.Error, database.DatabaseNotConfigured):
+        return db.empty_stats()
+
+
+# --- Translation and shared context ------------------------------------------
+
+
+def t(key: str, **kwargs: object) -> str:
+    """Translate ``key`` into the active language."""
+    return i18n.translate(request_lang(), key, **kwargs)
+
+
+def _shared_context() -> dict[str, Any]:
+    """Values every page needs, resolved once per request."""
+    return {
+        "lang": request_lang(),
+        "theme": request_theme(),
+        "languages": i18n.LANGUAGES,
+        "themes": i18n.THEMES,
+        "page_sizes": config.PAGE_SIZES,
+        "stats": _catalogue_stats(),
+    }
+
+
+def page_context(active: str, **data: Any) -> dict[str, Any]:
+    """Build the render context for a controller response.
+
+    ``data`` carries everything the controller wants to hand the template,
+    including the URLs it built for the page.
+    """
+    return {**_shared_context(), **data, "active": active}
+
+
+def render(template: str, context: dict[str, Any]) -> str:
+    """Render ``template`` with ``context`` through the application environment."""
+    return current_app.jinja_env.get_template(template).render(**context)
+
+
+# --- Filters and environment -------------------------------------------------
 
 
 def _format_number(value: int) -> str:
@@ -32,144 +120,15 @@ def _format_number(value: int) -> str:
     return f"{value:,}"
 
 
-_ENV.filters["num"] = _format_number
+def _finalize(value: object) -> object:
+    """Render ``None`` as an empty string."""
+    return "" if value is None else value
 
 
-def render(template: str, context: dict[str, Any]) -> str:
-    """Render ``template`` with ``context`` and return the HTML text."""
-    return _ENV.get_template(template).render(**context)
-
-
-def query_args() -> dict[str, str]:
-    """Return the request query string as a plain, first-wins mapping.
-
-    The first occurrence of a repeated key wins, matching ``dict(request.args)``
-    from the original Flask implementation.
-    """
-    args: dict[str, str] = {}
-    for key, value in parse_qsl(cherrypy.request.query_string, keep_blank_values=True):
-        args.setdefault(key, value)
-    return args
-
-
-def _query_string(values: dict[str, Any]) -> str:
-    """Serialise ``values`` as a query string, skipping ``None`` entries."""
-    clean = {key: value for key, value in values.items() if value is not None}
-    if not clean:
-        return ""
-    return "?" + urlencode(clean)
-
-
-def url_for(endpoint: str, **values: Any) -> str:
-    """Build a URL for ``endpoint``, translating Flask endpoint names.
-
-    Supported endpoints: ``static``, ``main.search``, ``main.part``,
-    ``main.package_image`` and ``main.about``. Extra keyword arguments become
-    query-string parameters.
-
-    Raises:
-        ValueError: If the endpoint is unknown.
-    """
-    if endpoint == "static":
-        filename = str(values.pop("filename", ""))
-        return "/static/" + quote(filename, safe="/") + _query_string(values)
-    if endpoint == "main.package_image":
-        code = str(values.pop("code", ""))
-        return "/package/" + quote(code, safe="") + "/image" + _query_string(values)
-    if endpoint == "main.part":
-        part_id = values.pop("part_id", "")
-        return f"/part/{quote(str(part_id), safe='')}" + _query_string(values)
-    if endpoint == "main.search":
-        return "/" + _query_string(values)
-    if endpoint == "main.about":
-        return "/about" + _query_string(values)
-    raise ValueError(f"unknown endpoint: {endpoint!r}")
-
-
-def current_lang() -> str:
-    """Resolve the active language from the request or the session."""
-    lang = query_args().get("lang") or cherrypy.session.get("lang") or i18n.DEFAULT_LANG
-    if lang not in i18n.TRANSLATIONS:
-        lang = i18n.DEFAULT_LANG
-    cherrypy.session["lang"] = lang
-    return lang
-
-
-def current_theme() -> str:
-    """Resolve the active theme from the request or the session."""
-    theme = (
-        query_args().get("theme") or cherrypy.session.get("theme") or i18n.DEFAULT_THEME
-    )
-    if theme not in i18n.THEMES:
-        theme = i18n.DEFAULT_THEME
-    cherrypy.session["theme"] = theme
-    return theme
-
-
-def _apply_overrides(args: dict[str, Any], overrides: dict[str, object]) -> None:
-    """Merge ``overrides`` into ``args``; ``None`` removes a key."""
-    for key, value in overrides.items():
-        if value is None:
-            args.pop(key, None)
-        else:
-            args[key] = value
-
-
-def page_context(
-    active: str,
-    endpoint: str,
-    view_args: dict[str, Any] | None = None,
-    *,
-    stats: dict[str, int] | None = None,
-) -> dict[str, Any]:
-    """Build the globals shared by every template.
-
-    Args:
-        active: Navigation item to mark as current (``search`` or ``about``).
-        endpoint: Logical endpoint of the current page, used by ``merge_args``.
-        view_args: Path arguments of the current page (for example ``part_id``).
-        stats: Catalogue counters; read from the database when omitted.
-
-    Returns:
-        The template context dictionary.
-    """
-    lang = current_lang()
-    theme = current_theme()
-    path_args: dict[str, Any] = dict(view_args or {})
-
-    def translate(key: str, **kwargs: object) -> str:
-        return i18n.translate(lang, key, **kwargs)
-
-    def search_url(**overrides: object) -> str:
-        """Build a search URL from the current query, applying overrides."""
-        args: dict[str, Any] = dict(query_args())
-        _apply_overrides(args, overrides)
-        return url_for("main.search", **args)
-
-    def part_url(part_id: int) -> str:
-        """Build a part URL that carries the current search query back with it."""
-        args: dict[str, Any] = dict(query_args())
-        args["part_id"] = part_id
-        return url_for("main.part", **args)
-
-    def merge_args(**overrides: object) -> str:
-        """Build a URL for the current endpoint with merged query arguments."""
-        args: dict[str, Any] = dict(path_args)
-        args.update(query_args())
-        _apply_overrides(args, overrides)
-        return url_for(endpoint, **args)
-
-    return {
-        "t": translate,
-        "lang": lang,
-        "theme": theme,
-        "languages": i18n.LANGUAGES,
-        "themes": i18n.THEMES,
-        "page_sizes": db.PAGE_SIZES,
-        "url_for": url_for,
-        "search_url": search_url,
-        "part_url": part_url,
-        "merge_args": merge_args,
-        "stats": stats if stats is not None else db.stats(),
-        "active": active,
-    }
+def configure_environment(app: Flask) -> None:
+    """Install the application's Jinja filters, globals and finalizer on ``app``."""
+    app.jinja_env.filters["num"] = _format_number
+    app.jinja_env.finalize = _finalize
+    # ``t`` is stateless (it reads the request itself), so it is a plain
+    # environment global rather than a per-request value.
+    app.jinja_env.globals["t"] = t

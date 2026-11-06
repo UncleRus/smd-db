@@ -4,18 +4,18 @@ The SQLite file shipped with the application is opened in read-only mode and is
 never modified. All queries go through this module so the SQL surface stays in
 one place.
 
-Connections are cached per thread and reused: the catalogue is read-only, so a
-long-lived connection per worker thread is both safe and cheaper than opening a
-fresh one for every request.
+Connections belong to :mod:`app.database`: inside a request they live on
+:data:`flask.g` and are released when the application context ends, so code in
+this module only ever asks for "the current connection".
 """
 
 from __future__ import annotations
 
 import sqlite3
-import threading
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, cast
+
+from . import database
 
 #: Columns selected for a part row, joined with its package, manufacturer and
 #: function.
@@ -42,13 +42,6 @@ SORTS: dict[str, str] = {
     "package": "p.package_id COLLATE NOCASE, p.name COLLATE NOCASE",
 }
 DEFAULT_SORT: str = "marking"
-
-PAGE_SIZES: tuple[int, ...] = (20, 50, 100)
-DEFAULT_PAGE_SIZE: int = 50
-
-
-class DatabaseNotConfigured(RuntimeError):
-    """Raised when the data layer is used before :func:`configure`."""
 
 
 @dataclass
@@ -77,60 +70,14 @@ class SearchFilters:
         )
 
 
-#: Resolved path of the catalogue; set once by :func:`configure`.
-_DATABASE: Path | None = None
-
-#: Per-thread cache of open connections keyed by database path.
-_LOCAL = threading.local()
-
-#: Catalogue size counters, computed once and reused.
-_STATS_CACHE: dict[str, int] | None = None
-
-
-def configure(database: str | Path) -> Path:
-    """Point the data layer at ``database`` and reset cached state.
-
-    Args:
-        database: Path to the SQLite catalogue.
-
-    Returns:
-        The resolved database path.
-    """
-    global _DATABASE, _STATS_CACHE
-    _DATABASE = Path(database).resolve()
-    _STATS_CACHE = None
-    for connection in _connections().values():
-        connection.close()
-    _LOCAL.connections = {}
-    return _DATABASE
-
-
-def _connections() -> dict[Path, sqlite3.Connection]:
-    """Return the current thread's connection cache."""
-    cache = getattr(_LOCAL, "connections", None)
-    if cache is None:
-        cache = {}
-        _LOCAL.connections = cache
-    return cast("dict[Path, sqlite3.Connection]", cache)
+#: Catalogue size counters, cached together with the resolved database path so
+#: pointing the application at another catalogue invalidates them.
+_STATS_CACHE: tuple[str, dict[str, int]] | None = None
 
 
 def get_db() -> sqlite3.Connection:
-    """Return the read-only SQLite connection for the current thread.
-
-    Raises:
-        DatabaseNotConfigured: If :func:`configure` has not been called.
-    """
-    if _DATABASE is None:
-        raise DatabaseNotConfigured("database path is not configured")
-    connections = _connections()
-    connection = connections.get(_DATABASE)
-    if connection is None:
-        uri = f"file:{_DATABASE.as_posix()}?mode=ro"
-        connection = sqlite3.connect(uri, uri=True, check_same_thread=False)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA query_only = ON")
-        connections[_DATABASE] = connection
-    return connection
+    """Return the SQLite connection bound to the current context."""
+    return database.get_db()
 
 
 def _escape_like(term: str) -> str:
@@ -282,10 +229,11 @@ def has_package_image(code: str) -> bool:
 
 
 def stats() -> dict[str, int]:
-    """Return and cache the catalogue size counters."""
+    """Return the catalogue size counters, cached per database path."""
     global _STATS_CACHE
-    if _STATS_CACHE is not None:
-        return _STATS_CACHE
+    key = str(database.database_path())
+    if _STATS_CACHE is not None and _STATS_CACHE[0] == key:
+        return _STATS_CACHE[1]
     connection = get_db()
     counters = {
         "parts": int(connection.execute("SELECT COUNT(*) FROM parts").fetchone()[0]),
@@ -302,7 +250,7 @@ def stats() -> dict[str, int]:
             connection.execute("SELECT COUNT(*) FROM functions").fetchone()[0]
         ),
     }
-    _STATS_CACHE = counters
+    _STATS_CACHE = (key, counters)
     return counters
 
 

@@ -1,5 +1,5 @@
 [Unit]
-Description=SMD-DB web application (CherryPy / cheroot)
+Description=SMD-DB web application (Flask / uWSGI)
 Documentation=file:/opt/smd-db/README.md
 After=network-online.target
 Wants=network-online.target
@@ -9,7 +9,8 @@ Type=simple
 User=smd-db
 Group=smd-db
 WorkingDirectory=/opt/smd-db
-ExecStart=/opt/smd-db/.venv/bin/python /opt/smd-db/run.py
+EnvironmentFile=-/etc/smd-db.env
+ExecStart=/usr/bin/uwsgi --ini /opt/smd-db/deploy/uwsgi.ini
 Restart=on-failure
 RestartSec=3
 

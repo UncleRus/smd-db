@@ -1,1 +1,12 @@
 __pycache__/
+*.py[cod]
+
+# Virtual environment and tool caches
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# SQLite sidecar files (the catalogue `smd.sqlite` itself is tracked)
+*.sqlite-shm
+*.sqlite-wal

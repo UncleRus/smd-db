@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}{{ t('app.title') }}{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='elumkit/index.css') }}" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}" />
+  <link rel="stylesheet" href="{{ index_css }}" />
+  <link rel="stylesheet" href="{{ app_css }}" />
 </head>
 <body>
   <div class="elum-shell">
@@ -14,14 +14,14 @@
     <nav class="elum-navbar" aria-label="{{ t('nav.primary') }}">
       <div class="elum-navbar-brand">{{ t('app.title') }}</div>
       <section class="elum-navlinks">
-        <a class="elum-navlink" href="{{ url_for('main.search', lang=lang, theme=theme) }}" {% if active == 'search' %}aria-current="page"{% endif %}>{{ t('nav.search') }}</a>
-        <a class="elum-navlink" href="{{ url_for('main.about', lang=lang, theme=theme) }}" {% if active == 'about' %}aria-current="page"{% endif %}>{{ t('nav.about') }}</a>
+        <a class="elum-navlink" href="{{ search_link }}" {% if active == 'search' %}aria-current="page"{% endif %}>{{ t('nav.search') }}</a>
+        <a class="elum-navlink" href="{{ about_link }}" {% if active == 'about' %}aria-current="page"{% endif %}>{{ t('nav.about') }}</a>
       </section>
 
       <div class="navbar-controls">
         <div class="lang-switch" role="group" aria-label="{{ t('label.language') }}">
           {% for code, label in languages %}
-          <a class="elum-button" data-variant="tertiary" href="{{ merge_args(lang=code) }}" {% if code == lang %}aria-current="true"{% endif %}>{{ label }}</a>
+          <a class="elum-button" data-variant="tertiary" href="{{ lang_links[code] }}" {% if code == lang %}aria-current="true"{% endif %}>{{ label }}</a>
           {% endfor %}
         </div>
         <label class="theme-switch">
@@ -44,6 +44,6 @@
       <p class="elum-footer-status">{{ t('footer.status', parts=stats.parts|num, manufacturers=stats.manufacturers|num, packages=stats.packages|num, functions=stats.functions|num) }}</p>
     </footer>
   </div>
-  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  <script src="{{ app_js }}" defer></script>
 </body>
 </html>

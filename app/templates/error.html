@@ -10,7 +10,7 @@
   </p>
   <p class="elum-card-subtitle">{{ error_message }}</p>
   <p class="error-actions">
-    <a class="elum-button" data-variant="primary" href="{{ url_for('main.search', lang=lang, theme=theme) }}">{{ t('error.back') }}</a>
+    <a class="elum-button" data-variant="primary" href="{{ search_link }}">{{ t('error.back') }}</a>
   </p>
 </article>
 {% endblock %}

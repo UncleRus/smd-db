@@ -3,7 +3,7 @@
 {% block content %}
 <div class="elum-toolbar" role="group" aria-label="{{ t('part.actions') }}">
   <div class="elum-toolbar-group">
-    <a class="elum-button" data-variant="tertiary" href="{{ search_url() }}">‹ {{ t('action.back') }}</a>
+    <a class="elum-button" data-variant="tertiary" href="{{ results_link }}">‹ {{ t('action.back') }}</a>
   </div>
   <div class="elum-toolbar-group" data-align="end">
     <span class="elum-toolbar-label">{{ t('field.marking') }}</span>
@@ -20,7 +20,7 @@
   <div class="elum-part-detail">
     <figure class="elum-package-figure">
       {% if package_has_image %}
-      <img src="{{ url_for('main.package_image', code=part['package_id']) }}" alt="{{ part['package_id'] }}" width="200" height="200" />
+      <img src="{{ package_image_url }}" alt="{{ part['package_id'] }}" width="200" height="200" />
       {% else %}
       {% include "_package_placeholder.html" %}
       {% endif %}
@@ -69,8 +69,8 @@
     </thead>
     <tbody role="rowgroup">
       {% for row in related %}
-      <tr role="row" class="row-link" data-href="{{ part_url(row['id']) }}">
-        <td data-label="{{ t('field.name') }}" role="cell"><a class="part-link" href="{{ part_url(row['id']) }}">{{ row['name'] }}</a></td>
+      <tr role="row" class="row-link" data-href="{{ part_links[row['id']] }}">
+        <td data-label="{{ t('field.name') }}" role="cell"><a class="part-link" href="{{ part_links[row['id']] }}">{{ row['name'] }}</a></td>
         <td data-label="{{ t('field.package') }}" role="cell">{{ row['package_id'] }}</td>
         <td data-label="{{ t('field.pins') }}" data-numeric="true" data-align="end" role="cell">{{ row['pins'] }}</td>
         <td data-label="{{ t('field.manufacturer') }}" role="cell">{{ row['manufacturer'] }}</td>

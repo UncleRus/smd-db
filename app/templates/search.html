@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ t('nav.search') }} · {{ t('app.title') }}{% endblock %}
 {% block content %}
-<form class="elum-query elum-query-parts" role="search" aria-label="{{ t('form.aria') }}" action="{{ url_for('main.search') }}" method="get">
+<form class="elum-query elum-query-parts" role="search" aria-label="{{ t('form.aria') }}" action="{{ search_action }}" method="get">
   <input type="hidden" name="lang" value="{{ lang }}" />
   <input type="hidden" name="theme" value="{{ theme }}" />
   <input type="hidden" name="sort" value="{{ sort }}" />
@@ -57,7 +57,7 @@
 
   <div class="elum-query-actions">
     <button class="elum-button" data-variant="primary" type="submit">{{ t('action.search') }}</button>
-    <a class="elum-button" data-variant="tertiary" href="{{ url_for('main.search', lang=lang, theme=theme) }}">{{ t('action.reset') }}</a>
+    <a class="elum-button" data-variant="tertiary" href="{{ search_link }}">{{ t('action.reset') }}</a>
   </div>
 </form>
 
@@ -105,9 +105,9 @@
     </thead>
     <tbody role="rowgroup">
       {% for row in rows %}
-      <tr role="row" class="row-link" data-href="{{ part_url(row['id']) }}">
+      <tr role="row" class="row-link" data-href="{{ part_links[row['id']] }}">
         <td data-label="{{ t('field.marking') }}" role="cell"><code>{{ row['code'] }}</code></td>
-        <td data-label="{{ t('field.name') }}" role="cell"><a class="part-link" href="{{ part_url(row['id']) }}">{{ row['name'] }}</a></td>
+        <td data-label="{{ t('field.name') }}" role="cell"><a class="part-link" href="{{ part_links[row['id']] }}">{{ row['name'] }}</a></td>
         <td data-label="{{ t('field.package') }}" role="cell">{{ row['package_id'] }}</td>
         <td data-label="{{ t('field.pins') }}" data-numeric="true" data-align="end" role="cell">{{ row['pins'] }}</td>
         <td data-label="{{ t('field.manufacturer') }}" role="cell">{{ row['manufacturer'] }}</td>

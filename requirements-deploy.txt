@@ -1,0 +1,10 @@
+-r requirements.txt
+
+# The production application server is uWSGI, installed from the distribution
+# rather than from PyPI:
+#
+#   apt-get install uwsgi-core uwsgi-plugin-python3
+#
+# The distribution's python3 plugin is built for the system Python; the
+# virtualenv created from that same Python is pointed to by ``virtualenv`` in
+# deploy/uwsgi.ini.

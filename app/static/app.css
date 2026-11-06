@@ -162,6 +162,34 @@ a.elum-navbar-brand:focus-visible {
   font-weight: 700;
 }
 
+/* --- Package drawing tooltip (lists) --- */
+/* Every package code in a list is a hover target; app.js points the tooltip at
+   the single package-image route and pins it with `position: fixed` so the
+   scrollable table wrapper never clips it. */
+.pkg-hover {
+  cursor: help;
+}
+.smd-pkg-tip {
+  --smd-pkg-tip-size: 133px;
+  position: fixed;
+  z-index: 1000;
+  padding: var(--elum-space-2);
+  background: var(--elum-color-surface);
+  border: var(--elum-border-width) solid var(--elum-color-border);
+  border-radius: var(--elum-radius-md);
+  box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 45%);
+  pointer-events: none;
+}
+.smd-pkg-tip[hidden] {
+  display: none;
+}
+.smd-pkg-tip img {
+  display: block;
+  width: var(--smd-pkg-tip-size);
+  height: var(--smd-pkg-tip-size);
+  image-rendering: crisp-edges;
+}
+
 /* --- Footer status line --- */
 .elum-footer-status {
   color: var(--elum-color-muted);
@@ -200,20 +228,6 @@ a.elum-navbar-brand:focus-visible {
   margin-top: var(--elum-space-2);
   color: var(--elum-color-muted);
   font-size: var(--elum-text-sm);
-}
-/* Placeholder shown when a package has no drawing: currentColor makes the
-   question mark follow the active theme, so it stays readable on any palette. */
-.elum-package-placeholder {
-  display: block;
-  color: var(--elum-color-fg);
-}
-.elum-package-placeholder svg {
-  display: block;
-  width: 200px;
-  height: 200px;
-}
-.elum-package-placeholder svg text {
-  font-family: var(--elum-font-family);
 }
 @media (max-width: 40rem) {
   .elum-part-detail {

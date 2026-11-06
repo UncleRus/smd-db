@@ -1,0 +1,8 @@
+{#- Placeholder drawing served by the package-image route when a package stores
+    no drawing. It leaves as a standalone SVG document, so it cannot inherit
+    `currentColor` from the page; the theme-neutral grey stays legible on every
+    palette. -#}
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect x="8" y="8" width="184" height="184" rx="18" fill="#808080" opacity="0.15" />
+  <text x="100" y="104" text-anchor="middle" dominant-baseline="central" font-size="120" font-weight="700" fill="#808080">?</text>
+</svg>

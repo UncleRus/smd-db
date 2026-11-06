@@ -159,17 +159,23 @@ def test_package_image_is_png(client: FlaskClient) -> None:
     assert response.data.startswith(b"\x89PNG")
 
 
-def test_missing_package_image_returns_404(client: FlaskClient) -> None:
-    assert client.get("/package/NO-SUCH-PACKAGE/image").status_code == 404
+def test_package_without_drawing_serves_the_placeholder(client: FlaskClient) -> None:
+    # SC-89-3 has image = NULL: the same route answers with the placeholder SVG
+    # instead of a 404, so a package code never becomes a missing request.
+    response = client.get("/package/SC-89-3/image")
+    assert response.status_code == 200
+    assert response.mimetype == "image/svg+xml"
+    assert b"<svg" in response.data
+
+
+def test_unknown_package_serves_the_placeholder(client: FlaskClient) -> None:
+    response = client.get("/package/NO-SUCH-PACKAGE/image")
+    assert response.status_code == 200
+    assert response.mimetype == "image/svg+xml"
 
 
 def test_package_without_image_segment_returns_404(client: FlaskClient) -> None:
     assert client.get("/package/SOT-223").status_code == 404
-
-
-def test_package_without_drawing_returns_404(client: FlaskClient) -> None:
-    # SC-89-3 has image = NULL after the placeholder migration.
-    assert client.get("/package/SC-89-3/image").status_code == 404
 
 
 def test_package_url_encodes_reserved_characters(app: Flask) -> None:
@@ -181,26 +187,57 @@ def test_package_url_encodes_reserved_characters(app: Flask) -> None:
         assert url_for("main.package", code="DFN-8 2x2") == "/package/DFN-8%202x2/image"
 
 
-def test_part_without_package_drawing_shows_placeholder(client: FlaskClient) -> None:
-    # Part 186 sits in SC-89-3, which has no stored drawing: the page must
-    # render the built-in placeholder instead of a broken <img>.
+def test_part_without_package_drawing_points_at_the_route(
+    client: FlaskClient,
+) -> None:
+    # Part 186 sits in SC-89-3, which has no stored drawing: the figure still
+    # uses the package-image route, which serves the placeholder there.
     body = text(client.get("/part/186"))
-    assert "elum-package-placeholder" in body
-    assert "/package/SC-89-3/image" not in body
+    figure = body.split('class="elum-package-figure"', 1)[1].split("</figure>", 1)[0]
+    assert '<img src="/package/SC-89-3/image"' in figure
+    assert "elum-package-placeholder" not in figure
 
 
 def test_part_with_package_drawing_uses_image(client: FlaskClient) -> None:
     # Part 1 sits in SC-70, which has a real drawing.
     body = text(client.get("/part/1"))
-    assert "/package/SC-70/image" in body
-    assert "elum-package-placeholder" not in body
+    figure = body.split('class="elum-package-figure"', 1)[1].split("</figure>", 1)[0]
+    assert '<img src="/package/SC-70/image"' in figure
 
 
-def test_has_package_image_flag(app: Flask) -> None:
-    with app.app_context():
-        assert db.has_package_image("SOT-223") is True
-        assert db.has_package_image("SC-89-3") is False
-        assert db.has_package_image("NO-SUCH-PACKAGE") is False
+# --- Package drawing tooltip -------------------------------------------------
+
+
+def test_every_package_code_is_a_hover_target(client: FlaskClient) -> None:
+    # Each cell names the package-image route; the endpoint decides between the
+    # drawing and the placeholder, so the markup is the same for every code.
+    body = text(client.get("/?package=SOT-223"))
+    assert (
+        '<span class="pkg-hover" data-pkg-code="SOT-223" '
+        'data-pkg-image="/package/SOT-223/image">SOT-223</span>'
+    ) in body
+
+
+def test_package_without_drawing_uses_the_same_target(client: FlaskClient) -> None:
+    body = text(client.get("/?package=SC-89-3"))
+    assert (
+        '<span class="pkg-hover" data-pkg-code="SC-89-3" '
+        'data-pkg-image="/package/SC-89-3/image">SC-89-3</span>'
+    ) in body
+
+
+def test_related_table_package_code_is_a_hover_target(client: FlaskClient) -> None:
+    # The "same marking" table on the part page is a list too.
+    body = text(client.get("/part/1"))
+    assert 'data-pkg-code="SC-70" data-pkg-image="/package/SC-70/image"' in body
+
+
+def test_package_tooltip_shell_holds_the_image(client: FlaskClient) -> None:
+    # The tooltip is rendered once in the page shell; app.js only swaps the
+    # source of its single image.
+    body = text(client.get("/"))
+    assert 'class="smd-pkg-tip"' in body
+    assert 'class="smd-pkg-tip-image"' in body
 
 
 # --- Concurrency and connection lifetime -------------------------------------

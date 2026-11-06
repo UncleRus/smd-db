@@ -122,8 +122,44 @@ def _page_links(result: SearchResult) -> dict[str, Any]:
 
 
 def _package_image_url(code: str) -> str:
-    """URL of the PNG drawing for a package code."""
+    """URL of the single package-image endpoint for a package code.
+
+    The endpoint serves the stored drawing, or its placeholder when the
+    package has none, so the same URL works for every package.
+    """
     return url_for("main.package", code=code)
+
+
+def _package_images(rows: Iterable[sqlite3.Row]) -> dict[str, str]:
+    """Package-image URLs for the package codes appearing in ``rows``.
+
+    ``rows`` may repeat a package; the mapping is keyed by code so the template
+    can look the URL up for each row.
+    """
+    codes = {str(row["package_id"]) for row in rows}
+    return {code: _package_image_url(code) for code in codes}
+
+
+def _image_mimetype(data: bytes) -> str:
+    """Guess an image's MIME type from its leading bytes.
+
+    The catalogue stores PNG today; the other signatures are recognised so the
+    endpoint keeps working if a drawing is ever stored in another format.
+    """
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data.startswith((b"GIF87a", b"GIF89a")):
+        return "image/gif"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    if data.startswith(b"BM"):
+        return "image/bmp"
+    stripped = data.lstrip()
+    if stripped.startswith((b"<svg", b"<?xml")):
+        return "image/svg+xml"
+    return "application/octet-stream"
 
 
 # --- Routes ------------------------------------------------------------------
@@ -141,6 +177,7 @@ def index() -> str:
             **shell_context(),
             **_page_links(result),
             part_links=_part_links(result.rows),
+            package_images=_package_images(result.rows),
             filters=result.filters,
             searched=result.searched,
             rows=result.rows,
@@ -176,7 +213,7 @@ def part(part_id: str) -> str:
             part=row,
             related=related,
             part_links=_part_links(related),
-            package_has_image=_catalogue.has_image(row["package_id"]),
+            package_images=_package_images(related),
             package_image_url=_package_image_url(str(row["package_id"])),
         ),
     )
@@ -184,19 +221,25 @@ def part(part_id: str) -> str:
 
 @main.get("/package/<pkg:code>/image")
 def package(code: str) -> Response:
-    """Serve the PNG package drawing stored as a BLOB.
+    """Serve the drawing for a package code, or its placeholder.
+
+    One endpoint for every package: the stored drawing (in whatever format it
+    is kept) when there is one, and the shared placeholder drawing otherwise.
+    Both the part page and the list tooltips point at this URL, so there is no
+    "has a drawing" branch anywhere and no request ever misses.
 
     The package code may contain slashes and reserved characters; the
     ``pkg`` converter matches the code and percent-encodes it in generated URLs.
     """
+    cache = {"Cache-Control": "public, max-age=86400"}
     data = _catalogue.image(code)
     if data is None:
-        abort(404)
-    return Response(
-        data,
-        mimetype="image/png",
-        headers={"Cache-Control": "public, max-age=86400"},
-    )
+        return Response(
+            rendering.render("_package_placeholder.svg", {}),
+            mimetype="image/svg+xml",
+            headers=cache,
+        )
+    return Response(data, mimetype=_image_mimetype(data), headers=cache)
 
 
 @main.get("/about")

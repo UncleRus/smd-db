@@ -121,12 +121,8 @@ class Catalogue:
         """Return other parts that share the marking of ``part``."""
         return db.parts_with_marking(part["code"], part["id"], part["package_id"])
 
-    def has_image(self, code: str) -> bool:
-        """Return ``True`` when the package stores a real drawing."""
-        return db.has_package_image(code)
-
     def image(self, code: str) -> bytes | None:
-        """Return the PNG drawing for a package code, or ``None``."""
+        """Return the drawing bytes for a package code, or ``None``."""
         return db.package_image(code)
 
     def menu(self) -> tuple[list[sqlite3.Row], list[sqlite3.Row], list[sqlite3.Row]]:

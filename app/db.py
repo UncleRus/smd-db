@@ -199,10 +199,10 @@ def list_packages() -> list[sqlite3.Row]:
 
 
 def package_image(code: str) -> bytes | None:
-    """Return the PNG drawing for a package code, or ``None``.
+    """Return the drawing bytes for a package code, or ``None``.
 
     ``None`` means either the package does not exist or it has no stored
-    drawing (``image IS NULL``); the caller shows a generic placeholder.
+    drawing (``image IS NULL``); the caller serves a placeholder.
     """
     row = (
         get_db()
@@ -212,20 +212,6 @@ def package_image(code: str) -> bytes | None:
     if row is None or row["image"] is None:
         return None
     return bytes(row["image"])
-
-
-def has_package_image(code: str) -> bool:
-    """Return ``True`` when the package stores a real drawing.
-
-    Used by the templates to decide between the drawing and the placeholder
-    without pulling the BLOB into memory.
-    """
-    row = (
-        get_db()
-        .execute("SELECT image IS NOT NULL FROM packages WHERE code = ?", (code,))
-        .fetchone()
-    )
-    return row is not None and bool(row[0])
 
 
 def stats() -> dict[str, int]:

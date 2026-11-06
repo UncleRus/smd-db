@@ -19,11 +19,7 @@
 
   <div class="elum-part-detail">
     <figure class="elum-package-figure">
-      {% if package_has_image %}
       <img src="{{ package_image_url }}" alt="{{ part['package_id'] }}" width="200" height="200" />
-      {% else %}
-      {% include "_package_placeholder.html" %}
-      {% endif %}
       <figcaption>{{ t('part.package_pins', package=part['package_id'], pins=part['pins']) }}</figcaption>
     </figure>
     <dl class="elum-detail-list">
@@ -71,7 +67,7 @@
       {% for row in related %}
       <tr role="row" class="row-link" data-href="{{ part_links[row['id']] }}">
         <td data-label="{{ t('field.name') }}" role="cell"><a class="part-link" href="{{ part_links[row['id']] }}">{{ row['name'] }}</a></td>
-        <td data-label="{{ t('field.package') }}" role="cell">{{ row['package_id'] }}</td>
+        <td data-label="{{ t('field.package') }}" role="cell"><span class="pkg-hover" data-pkg-code="{{ row['package_id'] }}" data-pkg-image="{{ package_images[row['package_id']] }}">{{ row['package_id'] }}</span></td>
         <td data-label="{{ t('field.pins') }}" data-numeric="true" data-align="end" role="cell">{{ row['pins'] }}</td>
         <td data-label="{{ t('field.manufacturer') }}" role="cell">{{ row['manufacturer'] }}</td>
       </tr>

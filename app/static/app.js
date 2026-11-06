@@ -59,3 +59,76 @@ function smdRowNavigate(event) {
 }
 
 document.addEventListener("click", smdRowNavigate);
+
+/**
+ * Package drawing tooltip.
+ *
+ * Every package code in a list carries data-pkg-image, the URL of the single
+ * package-image endpoint. While the pointer is over a code that URL is shown in
+ * one tooltip: the endpoint serves the drawing, or a placeholder when the
+ * package has none. The tooltip is pinned with `position: fixed`, so the
+ * scrollable table wrapper never clips it.
+ */
+(function () {
+  var tip = document.querySelector(".smd-pkg-tip");
+  if (!tip) {
+    return;
+  }
+  var image = tip.querySelector(".smd-pkg-tip-image");
+  var currentUrl = "";
+
+  function place(target) {
+    var rect = target.getBoundingClientRect();
+    var gap = 8;
+    var viewport = document.documentElement.clientWidth;
+    var left = rect.left + rect.width / 2 - tip.offsetWidth / 2;
+    left = Math.max(gap, Math.min(left, viewport - tip.offsetWidth - gap));
+    var top = rect.top - tip.offsetHeight - gap;
+    if (top < gap) {
+      top = rect.bottom + gap;
+    }
+    tip.style.left = left + "px";
+    tip.style.top = top + "px";
+  }
+
+  function show(target) {
+    var url = target.getAttribute("data-pkg-image");
+    if (!url) {
+      return;
+    }
+    if (url !== currentUrl) {
+      image.src = url;
+      currentUrl = url;
+    }
+    tip.hidden = false;
+    place(target);
+  }
+
+  function hide() {
+    tip.hidden = true;
+  }
+
+  document.addEventListener("mouseover", function (event) {
+    if (!(event.target instanceof Element)) {
+      return;
+    }
+    var target = event.target.closest("[data-pkg-image]");
+    if (target && !target.contains(event.relatedTarget)) {
+      show(target);
+    }
+  });
+
+  document.addEventListener("mouseout", function (event) {
+    if (!(event.target instanceof Element)) {
+      return;
+    }
+    var target = event.target.closest("[data-pkg-image]");
+    if (target && !target.contains(event.relatedTarget)) {
+      hide();
+    }
+  });
+
+  // Fixed coordinates go stale as soon as the page moves.
+  window.addEventListener("scroll", hide, true);
+  window.addEventListener("resize", hide);
+})();

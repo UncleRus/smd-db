@@ -21,12 +21,16 @@ from flask import Flask, current_app, g
 
 __all__ = [
     "DatabaseNotConfigured",
+    "check",
     "close_db",
     "connect",
     "database_path",
     "get_db",
     "init_app",
 ]
+
+#: Tables the catalogue must provide; another SQLite file is not a catalogue.
+_REQUIRED_TABLES = ("functions", "manufacturers", "packages", "parts")
 
 
 class DatabaseNotConfigured(RuntimeError):
@@ -40,6 +44,38 @@ def connect(database: str | Path) -> sqlite3.Connection:
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA query_only = ON")
     return connection
+
+
+def check(database: str | Path) -> Path:
+    """Return the resolved catalogue path, raising when it is unusable.
+
+    There is no degraded mode: a missing, unreadable or unrelated file is a
+    deployment error, so start-up fails loudly instead of serving pages with
+    zeroed counters and half-broken queries.
+    """
+    path = Path(database).resolve()
+    if not path.is_file():
+        raise DatabaseNotConfigured(f"catalogue not found: {path}")
+    connection: sqlite3.Connection | None = None
+    try:
+        connection = connect(path)
+        names = {
+            row[0]
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            )
+        }
+    except sqlite3.Error as error:
+        raise DatabaseNotConfigured(f"unreadable catalogue ({path}): {error}") from error
+    finally:
+        if connection is not None:
+            connection.close()
+    missing = [table for table in _REQUIRED_TABLES if table not in names]
+    if missing:
+        raise DatabaseNotConfigured(
+            f"{path} is not the catalogue: missing table(s) {', '.join(missing)}"
+        )
+    return path
 
 
 def database_path() -> Path:

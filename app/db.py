@@ -238,14 +238,3 @@ def stats() -> dict[str, int]:
     }
     _STATS_CACHE = (key, counters)
     return counters
-
-
-def empty_stats() -> dict[str, int]:
-    """Return zeroed counters, used when the catalogue cannot be read."""
-    return {
-        "parts": 0,
-        "markings": 0,
-        "manufacturers": 0,
-        "packages": 0,
-        "functions": 0,
-    }

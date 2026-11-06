@@ -72,6 +72,8 @@ def create_app(database_path: str | Path | None = None) -> Flask:
     # is registered (Werkzeug resolves converters while parsing the rules).
     app.url_map.converters["pkg"] = PackageCodeConverter
 
+    # Fail fast: without the catalogue nothing works, so refuse to start.
+    database.check(app.config["DATABASE"])
     database.init_app(app)
     rendering.configure_environment(app)
     app.register_blueprint(main)

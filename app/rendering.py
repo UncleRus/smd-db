@@ -11,13 +11,12 @@ only request-aware helper here is ``t``, which reads the current request itself.
 
 from __future__ import annotations
 
-import sqlite3
 from collections.abc import Container
 from typing import Any, cast
 
 from flask import Flask, current_app, g, request, session
 
-from . import config, database, db, i18n
+from . import config, db, i18n
 
 # --- Request state: query parameters, language and theme ---------------------
 
@@ -40,8 +39,9 @@ def _resolve(key: str, allowed: Container[str], default: str) -> str:
     The query parameter wins over the session value, which wins over the
     default. The result is cached on :data:`flask.g` so the template context
     and the error page agree on a single value per request. The session is only
-    written when the parameter was passed explicitly, so requests that merely
-    read a remembered choice (or hit a static file) never set a cookie.
+    written when the parameter was passed explicitly. The choice is remembered
+    beyond the browser session (``session.permanent``), so from then on every
+    response refreshes the cookie.
     """
     cached = getattr(g, key, None)
     if cached is not None:
@@ -70,14 +70,6 @@ def request_theme() -> str:
     return _resolve("theme", i18n.THEMES, i18n.DEFAULT_THEME)
 
 
-def _catalogue_stats() -> dict[str, int]:
-    """Return the catalogue counters, or zeroes when the database is unavailable."""
-    try:
-        return db.stats()
-    except (sqlite3.Error, database.DatabaseNotConfigured):
-        return db.empty_stats()
-
-
 # --- Translation and shared context ------------------------------------------
 
 
@@ -94,7 +86,7 @@ def _shared_context() -> dict[str, Any]:
         "languages": i18n.LANGUAGES,
         "themes": i18n.THEMES,
         "page_sizes": config.PAGE_SIZES,
-        "stats": _catalogue_stats(),
+        "stats": db.stats(),
     }
 
 

@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import sqlite3
 import threading
+from pathlib import Path
 
 import pytest
 from flask import Flask, url_for
@@ -483,3 +484,19 @@ def test_error_page_is_localized(client: FlaskClient) -> None:
     body = text(client.get("/part/999999999"))
     assert "Страница не найдена" in body
     assert "К поиску" in body
+
+
+def test_missing_catalogue_refuses_to_start(tmp_path: Path) -> None:
+    # There is no degraded mode: a deployment without the catalogue must fail
+    # at start-up instead of serving pages with zeroed counters.
+    with pytest.raises(database.DatabaseNotConfigured):
+        create_app(tmp_path / "absent.sqlite")
+
+
+def test_foreign_sqlite_file_refuses_to_start(tmp_path: Path) -> None:
+    stray = tmp_path / "stray.sqlite"
+    with sqlite3.connect(stray) as connection:
+        connection.execute("CREATE TABLE unrelated (id INTEGER)")
+    with pytest.raises(database.DatabaseNotConfigured) as error:
+        create_app(stray)
+    assert "missing table" in str(error.value)

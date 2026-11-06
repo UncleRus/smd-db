@@ -12,7 +12,7 @@
     <a class="elum-skip-link" href="#main">{{ t('nav.skip') }}</a>
 
     <nav class="elum-navbar" aria-label="{{ t('nav.primary') }}">
-      <div class="elum-navbar-brand">{{ t('app.title') }}</div>
+      <a class="elum-navbar-brand" href="{{ home_link }}">{{ t('app.title') }}</a>
       <section class="elum-navlinks">
         <a class="elum-navlink" href="{{ search_link }}" {% if active == 'search' %}aria-current="page"{% endif %}>{{ t('nav.search') }}</a>
         <a class="elum-navlink" href="{{ about_link }}" {% if active == 'about' %}aria-current="page"{% endif %}>{{ t('nav.about') }}</a>

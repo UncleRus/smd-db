@@ -5,6 +5,16 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+/* --- Navbar brand: link back to the search home (drops the filters). ---
+   The brand stays plain text even though it is a link: no underline and no
+   colour change (elumkit underlines every <a> and colours it on hover). */
+a.elum-navbar-brand,
+a.elum-navbar-brand:hover,
+a.elum-navbar-brand:focus-visible {
+  color: var(--elum-navbar-brand-color, var(--elum-color-accent));
+  text-decoration: none;
+}
+
 /* --- Navbar controls: language + theme --- */
 .navbar-controls {
   display: flex;

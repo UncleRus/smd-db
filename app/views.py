@@ -86,6 +86,7 @@ def shell_context() -> dict[str, Any]:
         "app_css": APP_CSS,
         "app_js": APP_JS,
         "search_action": url_for("main.index"),
+        "home_link": url_for("main.index"),
         "search_link": _route("main.index", {"lang": lang, "theme": theme}),
         "results_link": _route("main.index", query),
         "about_link": _route("main.about", {"lang": lang, "theme": theme}),

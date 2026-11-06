@@ -50,6 +50,13 @@ def test_search_page_renders(client: FlaskClient) -> None:
     assert b"SMD-DB" in response.data
 
 
+def test_navbar_brand_links_home_clearing_filters(client: FlaskClient) -> None:
+    # The navbar brand is a link to the search home with no filter parameters,
+    # so it resets an active search the same way the "search" nav item does.
+    body = text(client.get("/?code=L3&manufacturer=296"))
+    assert '<a class="elum-navbar-brand" href="/">SMD-DB</a>' in body
+
+
 def test_no_search_yet_lists_nothing(client: FlaskClient) -> None:
     # Without any condition the catalogue must not be dumped on the page.
     body = text(client.get("/"))

@@ -438,6 +438,17 @@ def test_about_renders(client: FlaskClient) -> None:
     assert "440,234" in text(response)
 
 
+def test_about_links_to_the_repository(client: FlaskClient) -> None:
+    body = text(client.get("/about"))
+    assert 'href="https://github.com/UncleRus/smd-db"' in body
+
+
+def test_about_marking_field_has_no_comma_before_dash(client: FlaskClient) -> None:
+    # Russian record-field line: no comma before the em dash.
+    body = text(client.get("/about?lang=ru"))
+    assert "Код, нанесённый на корпус \u2014 основной ключ поиска." in body
+
+
 # --- Error pages -------------------------------------------------------------
 
 

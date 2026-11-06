@@ -88,6 +88,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "The catalogue lives in a single smd.sqlite file that ships with the "
             "application, so the tool works fully offline and needs no network access."
         ),
+        "about.repo": "Source code:",
         "about.catalogue": "Catalogue",
         "about.metric.parts": "Parts",
         "about.metric.markings": "Marking codes",
@@ -175,6 +176,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "Каталог хранится в одном файле smd.sqlite, который поставляется вместе с "
             "приложением, поэтому инструмент работает полностью оффлайн и не требует доступа к сети."
         ),
+        "about.repo": "Исходный код:",
         "about.catalogue": "Каталог",
         "about.metric.parts": "Деталей",
         "about.metric.markings": "Кодов маркировки",
@@ -182,7 +184,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "about.metric.packages": "Корпусов",
         "about.metric.functions": "Функций",
         "about.fields": "Поля записи",
-        "about.field.marking": "Код, нанесённый на корпус, \u2014 основной ключ поиска.",
+        "about.field.marking": "Код, нанесённый на корпус \u2014 основной ключ поиска.",
         "about.field.name": "Полное обозначение детали у производителя.",
         "about.field.package": "Код корпуса, число выводов и чертёж корпуса.",
         "about.field.manufacturer": "Компания-производитель детали.",
@@ -258,6 +260,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "about.intro2": (
             "目录存放在随应用一同分发的单个 smd.sqlite 文件中，因此工具可完全离线运行，无需网络访问。"
         ),
+        "about.repo": "源代码：",
         "about.catalogue": "目录",
         "about.metric.parts": "元件",
         "about.metric.markings": "丝印代码",

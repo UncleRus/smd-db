@@ -23,7 +23,7 @@
   <div class="elum-field elum-q-fn">
     <label class="elum-label" for="function">{{ t('field.function') }}</label>
     <select class="elum-select" id="function" name="function">
-      <option value="">{{ t('select.any') }}</option>
+      <option value="">{{ t('select.any.function') }}</option>
       {% for fn in functions %}
       <option value="{{ fn['id'] }}" {% if filters.function_id == fn['id'] %}selected{% endif %}>{{ fn['name'] }}</option>
       {% endfor %}
@@ -52,7 +52,7 @@
 
   <div class="elum-field elum-q-pins">
     <label class="elum-label" for="pins">{{ t('field.pins') }}</label>
-    <input class="elum-input" id="pins" name="pins" type="number" min="1" max="64" inputmode="numeric" value="{{ filters.pins if filters.pins is not none else '' }}" placeholder="3" />
+    <input class="elum-input" id="pins" name="pins" type="number" min="1" max="64" inputmode="numeric" value="{{ filters.pins if filters.pins is not none else '' }}" placeholder="{{ t('placeholder.pins') }}" />
   </div>
 
   <div class="elum-query-actions">

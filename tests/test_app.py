@@ -69,6 +69,29 @@ def test_any_condition_runs_the_search(client: FlaskClient) -> None:
     assert 'class="elum-table"' in body
 
 
+def test_pins_field_starts_empty_with_an_example_placeholder(
+    client: FlaskClient,
+) -> None:
+    # A bare number read like an active filter; the placeholder must be an
+    # example, and the field must start empty.
+    field = text(client.get("/")).split('id="pins"', 1)[1].split(">", 1)[0]
+    assert 'value=""' in field
+    assert 'placeholder="e.g. 8"' in field
+
+
+def test_pins_placeholder_is_localized(client: FlaskClient) -> None:
+    field = text(client.get("/?lang=ru")).split('id="pins"', 1)[1].split(">", 1)[0]
+    assert 'placeholder="напр. 8"' in field
+
+
+def test_function_any_option_agrees_in_gender(client: FlaskClient) -> None:
+    # "Функция" is feminine, so its "any" option reads "Любая", not "Любой".
+    body = text(client.get("/?lang=ru"))
+    select = body.split('id="function"', 1)[1].split("</select>", 1)[0]
+    assert ">Любая</option>" in select
+    assert ">Любой</option>" not in select
+
+
 def test_result_rows_are_links(client: FlaskClient) -> None:
     # The whole row is clickable: every row carries the part URL.
     body = text(client.get("/?code=L3"))
@@ -303,7 +326,7 @@ def test_placeholder_images_are_null_and_none_remain(app: Flask) -> None:
         nulls = connection.execute(
             "SELECT COUNT(*) FROM packages WHERE image IS NULL"
         ).fetchone()[0]
-        assert nulls == 280
+        assert nulls == 272
         leftover = [
             row[0]
             for row in connection.execute("SELECT code, image FROM packages")
